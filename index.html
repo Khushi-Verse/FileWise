@@ -1,0 +1,283 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart File Manager</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app-container">
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">⌛</div>
+                <div>
+                    <h2>FileWise</h2>
+                    <p>SMART FILE MANAGER</p>
+                </div>
+            </div>
+
+            <p class="menu-heading">WORKSPACE</p>
+
+            <nav>
+                <a href="#" class="nav-link active">
+                    <span class="nav-icon">▦</span> Dashboard
+                </a>
+                <a href="#" class="nav-link">
+                    <span class="nav-icon">▤</span> All Files
+                </a>
+                <a href="#" class="nav-link">
+                    <span class="nav-icon">◷</span> Expiring Soon
+                </a>
+                <a href="#" class="nav-link">
+                    <span class="nav-icon">♻</span> Recently Deleted
+                </a>
+                <a href="#" class="nav-link">
+                    <span class="nav-icon">◴</span> Activity History
+                </a>
+            </nav>
+
+            <div class="sidebar-note">
+                <div class="note-icon">💡</div>
+                <h3>Stay in control</h3>
+                <p>Choose how long to keep your files. Your unmanaged files stay untouched.</p>
+            </div>
+
+            <div class="sidebar-footer">
+                <span class="status-dot"></span>
+                Desktop application
+            </div>
+        </aside>
+
+        <!-- Main Dashboard -->
+        <main class="main-content">
+
+            <header class="topbar">
+                <div>
+                    <p class="breadcrumb">WORKSPACE / OVERVIEW</p>
+                    <h1>Dashboard</h1>
+                    <p class="page-description">
+                        Manage your files and stay ahead of expiration dates.
+                    </p>
+                </div>
+
+                <div class="topbar-right">
+                    <div class="profile-avatar">K</div>
+                    <div>
+                        <strong>My Workspace</strong>
+                        <p>Local file management</p>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Welcome banner -->
+            <section class="welcome-banner">
+                <div class="welcome-content">
+                    <span class="banner-label">SMART RETENTION</span>
+                    <h2>Your files, your timeline.</h2>
+                    <p>
+                        Keep important files forever or set a retention period
+                        for files you no longer need later.
+                    </p>
+                    <button id="manageFileBtn" class="primary-button" type="button">
+                        <span>＋</span> Manage a File
+                    </button>
+                </div>
+
+                <div class="banner-art" aria-hidden="true">
+                    <div class="orbit orbit-one"></div>
+                    <div class="orbit orbit-two"></div>
+                    <div class="big-folder">📁</div>
+                    <div class="floating-clock">◷</div>
+                </div>
+            </section>
+
+            <!-- File status overview -->
+            <section class="section">
+                <div class="section-heading">
+                    <div>
+                        <h2>File Overview</h2>
+                        <p>Understand how your files are being managed.</p>
+                    </div>
+                    <span class="sample-tag">SAMPLE DATA</span>
+                </div>
+
+                <div class="stats-grid">
+
+                    <article class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon purple">▤</div>
+                            <span class="stat-caption">TRACKED</span>
+                        </div>
+                        <h3>12</h3>
+                        <p class="stat-title">Managed Files</p>
+                        <p class="stat-description">
+                            Files with a retention period
+                        </p>
+                    </article>
+
+                    <article class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon orange">◷</div>
+                            <span class="stat-caption">ATTENTION</span>
+                        </div>
+                        <h3>2</h3>
+                        <p class="stat-title">Expiring Soon</p>
+                        <p class="stat-description">
+                            Files nearing expiration
+                        </p>
+                    </article>
+
+                    <article class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon green">∞</div>
+                            <span class="stat-caption">NO EXPIRY</span>
+                        </div>
+                        <h3>8</h3>
+                        <p class="stat-title">Keep Forever</p>
+                        <p class="stat-description">
+                            Files without an expiry date
+                        </p>
+                    </article>
+
+                    <article class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon blue">◉</div>
+                            <span class="stat-caption">UNTOUCHED</span>
+                        </div>
+                        <h3>5</h3>
+                        <p class="stat-title">Unmanaged Files</p>
+                        <p class="stat-description">
+                            Files left unmanaged by default
+                        </p>
+                    </article>
+
+                </div>
+            </section>
+
+
+<!-- Expiring files -->
+<section class="section">
+    <div class="section-heading">
+        <div>
+            <h2>Files Needing Attention</h2>
+            <p>Review upcoming expirations before files reach their expiry dates.</p>
+        </div>
+        <a href="#" class="text-link">View all →</a>
+    </div>
+
+    <div class="file-table">
+        <div class="table-header">
+            <span>FILE NAME</span>
+            <span>RETENTION</span>
+            <span>EXPIRES</span>
+            <span>STATUS</span>
+        </div>
+
+        <!-- Real file records are loaded here from SQLite -->
+        <div id="savedFilesList"></div>
+    </div>
+</section>
+
+
+            <!-- Retention explanation -->
+            <section class="section retention-section">
+                <div class="section-heading">
+                    <div>
+                        <h2>Retention at a Glance</h2>
+                        <p>Every file has a different purpose and lifespan.</p>
+                    </div>
+                </div>
+
+                <div class="retention-grid">
+                    <article class="retention-card">
+                        <div class="retention-symbol forever">∞</div>
+                        <div>
+                            <h3>Keep Forever</h3>
+                            <p>No expiration date. The file stays unmanaged by default.</p>
+                        </div>
+                    </article>
+
+                    <article class="retention-card">
+                        <div class="retention-symbol timed">◷</div>
+                        <div>
+                            <h3>Time-Limited</h3>
+                            <p>Managed files receive a retention period and expiry date.</p>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+            <section class="section">
+  <div class="section-heading">
+    <div>
+      <h2>File Manager</h2>
+      <p>Select a real file to inspect its information.</p>
+    </div>
+  </div>
+
+  <button id="selectFileBtn" class="primary-button" type="button">
+    Select File
+  </button>
+
+  <button id="copyFileBtn" class="primary-button" type="button">
+  Copy File
+</button>
+
+<button id="renameFileBtn" class="primary-button" type="button">
+  Rename File
+</button>
+<div id="renameControls" hidden>
+  <label for="newFileName">Enter the new filename:</label>
+  <input
+    id="newFileName"
+    type="text"
+    placeholder="Enter new filename"
+  />
+  <button id="confirmRenameBtn" class="primary-button" type="button">
+    Confirm Rename
+  </button>
+  <button id="cancelRenameBtn" class="primary-button" type="button">
+    Cancel
+  </button>
+</div>
+<button id="moveFileBtn" class="primary-button" type="button">
+  Move File
+</button>
+
+  <div id="fileInfo" hidden>
+    <p><strong>Name:</strong> <span id="fileName"></span></p>
+    <p><strong>Path:</strong> <span id="filePath"></span></p>
+    <p><strong>Size:</strong> <span id="fileSize"></span></p>
+    <p><strong>Type:</strong> <span id="fileType"></span></p>
+  </div>
+
+  <p id="fileMessage" role="status" aria-live="polite"></p>
+</section>
+
+            <footer>
+                <span>FileWise</span>
+                <p>Smart file management, on your terms.</p>
+            </footer>
+
+        </main>
+    </div>
+    <div id="retentionDuration" hidden>
+  <h3>How long do you want to keep this file?</h3>
+
+  <label for="retentionPeriod">Choose a duration:</label>
+
+  <select id="retentionPeriod">
+    <option value="forever">Keep Forever</option>
+    <option value="7days">7 days</option>
+    <option value="1month">1 month</option>
+    <option value="6months">6 months</option>
+  </select>
+</div>
+    <script src="renderer.js"></script>
+</body>
+</html>
