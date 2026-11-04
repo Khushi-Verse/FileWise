@@ -19,5 +19,9 @@ contextBridge.exposeInMainWorld("appInfo", {
   getHistory: () => ipcRenderer.invoke("database:get-history"),
   deleteFileRecord: (filePath) =>
     ipcRenderer.invoke("database:delete-file-record", filePath),
+  manageFile: (filePath, duration,
+  customDays) =>
+  ipcRenderer.invoke("file:manage", filePath, duration,
+    customDays),
 });
 

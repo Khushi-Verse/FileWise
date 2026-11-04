@@ -92,6 +92,53 @@ function updateSavedFileRecord(oldPath, newPath, newName) {
 }
 
 
+function calculateExpiryDate(startDate, duration, customDays = 0) {
+    if (duration === "forever") {
+        return null;
+    }
+
+    const expiryDate = new Date(startDate);
+
+    switch (duration) {
+        case "custom":
+            expiryDate.setDate(expiryDate.getDate() + customDays);
+            break;
+
+        case "1day":
+            expiryDate.setDate(expiryDate.getDate() + 1);
+            break;
+
+        case "7days":
+            expiryDate.setDate(expiryDate.getDate() + 7);
+            break;
+
+        case "1month":
+        case "6months": {
+            const months = duration === "1month" ? 1 : 6;
+            const originalDay = expiryDate.getDate();
+
+            expiryDate.setDate(1);
+            expiryDate.setMonth(expiryDate.getMonth() + months);
+
+            const lastDay = new Date(
+                expiryDate.getFullYear(),
+                expiryDate.getMonth() + 1,
+                0
+            ).getDate();
+
+            expiryDate.setDate(Math.min(originalDay, lastDay));
+            break;
+        }
+
+        default:
+            throw new Error("Invalid retention duration.");
+    }
+
+    return expiryDate;
+}
+
+
+
 ipcMain.handle("file:select", async () => {
   const result = await dialog.showOpenDialog({
     properties: ["openFile"]
@@ -112,18 +159,90 @@ ipcMain.handle("file:select", async () => {
     isDirectory: stats.isDirectory()
   };
 
+  
+  return fileInfo;
+});
+
+ipcMain.handle("file:manage", async (_event, filePath, duration, customDays) => {
+
+  // 1. Validate the file path.
+  if (typeof filePath !== "string" || !filePath.trim()) {
+    throw new Error("Invalid file path.");
+  }
+
+  // 2. Validate the selected duration.
+  const validDurations = [
+    "forever",
+    "1day",
+    "7days",
+    "1month",
+    "6months",
+    "custom"
+  ];
+  if (
+  duration === "custom" &&
+  (!Number.isInteger(customDays) || customDays < 1)
+) {
+  throw new Error("Enter a valid number of days.");
+}
+
+  if (!validDurations.includes(duration)) {
+    throw new Error("Invalid retention duration.");
+  }
+
+  // 3. Check whether the file actually exists.
+  const stats = await fs.stat(filePath);
+
+  if (!stats.isFile()) {
+    throw new Error("Please select a valid file.");
+  }
+
+  // 4. Calculate the expiry date.
+  const expiryDate = calculateExpiryDate(
+    new Date(),
+    duration,
+    customDays
+  );
+
+  // 5. Convert the date into a database-friendly string.
+  const expiryAt = expiryDate
+    ? expiryDate.toISOString()
+    : null;
+
+  // 6. Determine the file status.
+  const status = duration === "forever"
+    ? "unmanaged"
+    : "managed";
+
+  // 7. Insert or update the database record.
   const saveFile = db.prepare(`
-    INSERT INTO files (name, path)
-    VALUES (?, ?)
+    INSERT INTO files (name, path, expiry_at, status)
+    VALUES (?, ?, ?, ?)
     ON CONFLICT(path) DO UPDATE SET
-      name = excluded.name
+      name = excluded.name,
+      expiry_at = excluded.expiry_at,
+      status = excluded.status
   `);
 
-  saveFile.run(fileInfo.name, fileInfo.path);
-recordFileHistory(fileInfo.path, "selected");
-  console.log("File saved in database:", fileInfo.name);
+  saveFile.run(
+    path.basename(filePath),
+    filePath,
+    expiryAt,
+    status
+  );
 
-  return fileInfo;
+  // 8. Record the action in history.
+  recordFileHistory(
+    filePath,
+    duration === "forever" ? "kept-forever" : "managed"
+  );
+
+  return {
+    success: true,
+    name: path.basename(filePath),
+    expiryAt,
+    status
+  };
 });
 
 

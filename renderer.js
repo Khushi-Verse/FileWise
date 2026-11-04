@@ -1,16 +1,23 @@
+let fileToManage = null;
 const button = document.getElementById("manageFileBtn");
 
 if (button) {
-  button.addEventListener("click", () => {
-    const choice = window.confirm(
-      "Choose OK to keep this file forever.\n" +
-      "Choose Cancel to select a temporary duration."
-    );
+  button.addEventListener("click", async () => {
+    try {
+      const file = await window.appInfo.selectFile();
 
-    if (choice) {
-      alert("This file will be kept forever.");
-    } else {
+      if (!file) return;
+
+      fileToManage = file;
+
       showRetentionChoices();
+console.log("Selected file:", fileToManage);
+console.log(
+  "Retention section:",
+  document.getElementById("retentionDuration").hidden
+);
+    } catch (error) {
+      console.error("File selection failed:", error);
     }
   });
 }
@@ -60,6 +67,48 @@ if (selectFileBtn) {
   });
 }
 
+ const confirmRetentionBtn =
+  document.getElementById("confirmRetentionBtn");
+
+if (confirmRetentionBtn) {
+  confirmRetentionBtn.addEventListener("click", async () => {
+
+    if (!fileToManage) {
+      alert("Please select a file first.");
+      return;
+    }
+
+    const duration =
+      document.getElementById("retentionPeriod").value;
+
+    const customDays =
+      duration === "custom"
+        ? Number(document.getElementById("customDays").value)
+        : 0;
+
+    try {
+      const result = await window.appInfo.manageFile(
+        fileToManage.path,
+        duration,
+        customDays
+      );
+
+      if (result.success) {
+        alert("File management preference saved!");
+
+        document.getElementById("retentionDuration").hidden = true;
+
+        fileToManage = null;
+
+        await loadSavedFiles();
+      }
+
+    } catch (error) {
+      console.error("Management failed:", error);
+      alert(error.message || "Could not manage file.");
+    }
+  });
+}
 const copyFileBtn = document.getElementById("copyFileBtn");
 
 if (copyFileBtn) {
@@ -239,7 +288,7 @@ async function loadSavedFiles() {
 
       const statusContainer = document.createElement("div");
       const status = document.createElement("span");
-      status.className = "status managed";
+      status.className = `status ${file.status}`;
       status.textContent = file.status;
 
       statusContainer.appendChild(status);
@@ -250,5 +299,10 @@ async function loadSavedFiles() {
     console.error("Failed to load saved files:", error);
   }
 }
-
+if (retentionPeriod && customDurationInput) {
+  retentionPeriod.addEventListener("change", () => {
+    customDurationInput.hidden =
+      retentionPeriod.value !== "custom";
+  });
+}
 loadSavedFiles();
