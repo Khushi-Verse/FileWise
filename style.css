@@ -746,3 +746,167 @@ footer span {
         flex-direction: column;
     }
 }
+/* ---------- File Retention Controls ---------- */
+
+#retentionDuration {
+    margin-top: 25px;
+    padding: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 4px 15px rgba(41, 40, 64, 0.05);
+}
+
+#retentionDuration[hidden],
+#customDurationInput[hidden] {
+    display: none !important;
+}
+
+#retentionDuration h3 {
+    font-size: 17px;
+    margin-bottom: 18px;
+}
+
+#retentionDuration label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 9px;
+}
+
+#retentionPeriod,
+#customDays {
+    width: 100%;
+    max-width: 350px;
+    padding: 11px 13px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--text);
+    font: inherit;
+    font-size: 12px;
+    outline: none;
+}
+
+#retentionPeriod:focus,
+#customDays:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(105, 92, 231, 0.12);
+}
+
+#customDurationInput {
+    margin-top: 18px;
+}
+
+#confirmRetentionBtn {
+    display: block;
+    margin-top: 20px;
+    padding: 11px 22px;
+    border: none;
+    border-radius: 8px;
+    background: var(--primary);
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+#confirmRetentionBtn:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+}
+
+
+/* ---------- Folder Retention Policy ---------- */
+
+.folder-policy-section {
+    margin-top: 28px;
+    padding: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 3px 12px rgba(40, 35, 100, 0.04);
+}
+
+.folder-policy-header h3 {
+    font-size: 18px;
+    color: var(--text);
+    margin-bottom: 7px;
+}
+
+.folder-policy-header p {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+.folder-policy-controls {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.folder-policy-controls label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+#folderRetention {
+    min-width: 145px;
+    padding: 10px 13px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #fafaff;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 12px;
+    outline: none;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+#folderRetention:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(105, 92, 231, 0.12);
+}
+
+.folder-policy-button {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 11px 18px;
+    border-radius: 8px;
+    font-size: 12px;
+}
+
+.folder-policy-button:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 12px rgba(105, 92, 231, 0.2);
+}
+
+.folder-policy-button:active {
+    transform: translateY(0);
+}
+
+/* Responsive design */
+
+@media (max-width: 600px) {
+    .folder-policy-section {
+        padding: 18px;
+    }
+
+    .folder-policy-controls {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    #folderRetention,
+    .folder-policy-button {
+        width: 100%;
+    }
+}

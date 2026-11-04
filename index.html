@@ -249,15 +249,45 @@
   Move File
 </button>
 
-  <div id="fileInfo" hidden>
-    <p><strong>Name:</strong> <span id="fileName"></span></p>
-    <p><strong>Path:</strong> <span id="filePath"></span></p>
-    <p><strong>Size:</strong> <span id="fileSize"></span></p>
-    <p><strong>Type:</strong> <span id="fileType"></span></p>
+<div class="folder-policy-section">
+
+  <div class="folder-policy-header">
+    <h3>Folder Retention Policy</h3>
+    <p>
+      Assign a retention period to a folder.
+      Files inside it will follow this policy.
+    </p>
   </div>
 
-  <p id="fileMessage" role="status" aria-live="polite"></p>
-</section>
+  <div class="folder-policy-controls">
+    <label for="folderRetention">
+      Choose folder retention
+    </label>
+
+    <select id="folderRetention">
+      <option value="forever">Forever</option>
+      <option value="1day">1 Day</option>
+      <option value="7days">7 Days</option>
+      <option value="1month">1 Month</option>
+      <option value="6months">6 Months</option>
+    </select>
+
+    <button
+      id="setFolderPolicyBtn"
+      class="primary-button folder-policy-button"
+      type="button"
+    >
+      Choose Folder & Set Policy
+    </button>
+    <p
+  id="folderPolicyMessage"
+  class="folder-policy-message"
+  role="status"
+  aria-live="polite"
+></p>
+  </div>
+
+</div>
 
             <footer>
                 <span>FileWise</span>
@@ -266,32 +296,7 @@
 
         </main>
     </div>
-    <div id="retentionDuration" hidden>
-  <h3>How long do you want to keep this file?</h3>
-
-  <label for="retentionPeriod">Choose a duration:</label>
-
-  <select id="retentionPeriod">
-    <option value="forever">Keep Forever</option>
-    <option value="1day">1 day</option>
-    <option value="7days">7 days</option>
-    <option value="1month">1 month</option>
-    <option value="6months">6 months</option>
-    <option value="custom">Custom duration</option>
-  </select>
-  
-<div id="customDurationInput" hidden>
-  <label for="customDays">Number of days:</label>
-  <input
-    type="number"
-    id="customDays"
-    min="1"
-    placeholder="Enter days"
-  />
-</div>
-<button id="confirmRetentionBtn" type="button">
-  Confirm
-</button>
+    
 </div>
     <script src="renderer.js"></script>
 </body>

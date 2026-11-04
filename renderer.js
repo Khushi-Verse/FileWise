@@ -299,6 +299,13 @@ async function loadSavedFiles() {
     console.error("Failed to load saved files:", error);
   }
 }
+const retentionPeriod =
+  document.getElementById("retentionPeriod");
+
+const customDurationInput =
+  document.getElementById("customDurationInput");
+
+// Show custom duration input only when Custom is selected
 if (retentionPeriod && customDurationInput) {
   retentionPeriod.addEventListener("change", () => {
     customDurationInput.hidden =
@@ -306,3 +313,51 @@ if (retentionPeriod && customDurationInput) {
   });
 }
 loadSavedFiles();
+
+const setFolderPolicyBtn =
+  document.getElementById("setFolderPolicyBtn");
+
+const folderPolicyMessage =
+  document.getElementById("folderPolicyMessage");
+
+if (setFolderPolicyBtn) {
+
+  setFolderPolicyBtn.addEventListener(
+    "click",
+    async () => {
+
+      const retention =
+        document.getElementById("folderRetention").value;
+
+      try {
+
+        const result =
+          await window.appInfo.setFolderPolicy(retention);
+
+        if (result.canceled) {
+          if (folderPolicyMessage) {
+            folderPolicyMessage.textContent =
+              "Folder selection cancelled.";
+          }
+          return;
+        }
+
+        if (folderPolicyMessage) {
+          folderPolicyMessage.textContent =
+            `Folder policy applied successfully: ${retention}`;
+        }
+
+        await loadSavedFiles();
+
+      } catch (error) {
+
+        console.error("Folder policy failed:", error);
+
+        if (folderPolicyMessage) {
+          folderPolicyMessage.textContent =
+            error.message || "Could not set folder policy.";
+        }
+      }
+    }
+  );
+}

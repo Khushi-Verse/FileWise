@@ -23,5 +23,7 @@ contextBridge.exposeInMainWorld("appInfo", {
   customDays) =>
   ipcRenderer.invoke("file:manage", filePath, duration,
     customDays),
+    setFolderPolicy: (retention) =>
+  ipcRenderer.invoke("folder:set-policy", retention),
 });
 

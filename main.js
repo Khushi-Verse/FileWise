@@ -42,7 +42,21 @@ db.exec(`
 `);
 
 db.exec("PRAGMA foreign_keys = ON");
+// Add the folder_policy_path column if it doesn't exist.
+const fileColumns = db.prepare(
+  "PRAGMA table_info(files)"
+).all();
 
+const hasFolderPolicyColumn = fileColumns.some(
+  (column) => column.name === "folder_policy_path"
+);
+
+if (!hasFolderPolicyColumn) {
+  db.exec(`
+    ALTER TABLE files
+    ADD COLUMN folder_policy_path TEXT
+  `);
+}
 console.log("FileWise database connected successfully.");
 
 function recordFileHistory(filePath, action) {
@@ -137,7 +151,179 @@ function calculateExpiryDate(startDate, duration, customDays = 0) {
     return expiryDate;
 }
 
+// Check whether a file is inside a folder.
+function isInsideFolder(filePath, folderPath) {
+  const relativePath = path.relative(
+    folderPath,
+    filePath
+  );
 
+  return (
+    relativePath === "" ||
+    (
+      relativePath !== ".." &&
+      !relativePath.startsWith(`..${path.sep}`) &&
+      !path.isAbsolute(relativePath)
+    )
+  );
+}
+
+
+// Find the retention policy of a file's folder.
+function findFolderPolicy(filePath) {
+
+  const folders = db.prepare(`
+    SELECT path, retention
+    FROM folders
+  `).all();
+
+  // If multiple policies match, use the nearest folder.
+  const matchingFolders = folders
+    .filter(folder =>
+      isInsideFolder(filePath, folder.path)
+    )
+    .sort((a, b) =>
+      b.path.length - a.path.length
+    );
+
+  return matchingFolders[0] || null;
+}
+
+
+// Apply the folder policy to a file.
+function applyFolderPolicy(filePath) {
+
+  const file = db.prepare(`
+    SELECT *
+    FROM files
+    WHERE path = ?
+  `).get(filePath);
+
+  if (!file) return;
+
+  const folderPolicy = findFolderPolicy(filePath);
+
+  // No folder policy exists.
+  if (!folderPolicy) {
+
+    // Only remove retention if it came from a folder.
+    if (file.folder_policy_path) {
+
+      db.prepare(`
+        UPDATE files
+        SET expiry_at = NULL,
+            status = 'unmanaged',
+            folder_policy_path = NULL
+        WHERE path = ?
+      `).run(filePath);
+
+      recordFileHistory(
+        filePath,
+        "folder-policy-removed"
+      );
+    }
+
+    return;
+  }
+
+  // Calculate a fresh expiry date.
+  const expiryDate = calculateExpiryDate(
+    new Date(),
+    folderPolicy.retention
+  );
+
+  const expiryAt = expiryDate
+    ? expiryDate.toISOString()
+    : null;
+
+  const status = folderPolicy.retention === "forever"
+    ? "unmanaged"
+    : "managed";
+
+  // Update the file's database record.
+  db.prepare(`
+    UPDATE files
+    SET expiry_at = ?,
+        status = ?,
+        folder_policy_path = ?
+    WHERE path = ?
+  `).run(
+    expiryAt,
+    status,
+    folderPolicy.path,
+    filePath
+  );
+
+  recordFileHistory(
+    filePath,
+    "folder-policy-applied"
+  );
+}
+
+ipcMain.handle(
+  "folder:set-policy",
+  async (_event, retention) => {
+
+    const validDurations = [
+      "forever",
+      "1day",
+      "7days",
+      "1month",
+      "6months"
+    ];
+
+    if (!validDurations.includes(retention)) {
+      throw new Error("Invalid folder retention.");
+    }
+
+    // Ask the user to select a folder.
+    const result = await dialog.showOpenDialog({
+      title: "Select a folder for retention policy",
+      properties: ["openDirectory"]
+    });
+
+    if (result.canceled) {
+      return { canceled: true };
+    }
+
+    const folderPath = path.resolve(
+      result.filePaths[0]
+    );
+
+    // Verify that it is a directory.
+    const stats = await fs.stat(folderPath);
+
+    if (!stats.isDirectory()) {
+      throw new Error("Please select a valid folder.");
+    }
+
+    // Save or update the folder policy.
+    db.prepare(`
+      INSERT INTO folders (path, retention)
+      VALUES (?, ?)
+      ON CONFLICT(path) DO UPDATE SET
+        retention = excluded.retention
+    `).run(folderPath, retention);
+
+    // Apply the policy to files already recorded
+    // inside this folder.
+    const savedFiles = db.prepare(`
+      SELECT path FROM files
+    `).all();
+
+    for (const file of savedFiles) {
+      if (isInsideFolder(file.path, folderPath)) {
+        applyFolderPolicy(file.path);
+      }
+    }
+
+    return {
+      success: true,
+      folderPath,
+      retention
+    };
+  }
+);
 
 ipcMain.handle("file:select", async () => {
   const result = await dialog.showOpenDialog({
@@ -332,6 +518,7 @@ ipcMain.handle("file:copy", async () => {
         constants.COPYFILE_EXCL
       );
 saveFileRecord(newName, destinationPath);
+applyFolderPolicy(destinationPath);
       return {
         canceled: false,
         name: newName,
@@ -434,6 +621,7 @@ updateSavedFileRecord(
   destinationPath,
   fileName
 );
+applyFolderPolicy(destinationPath);
 recordFileHistory(destinationPath, "moved");
   return {
     canceled: false,
