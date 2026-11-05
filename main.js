@@ -1,9 +1,11 @@
 
-const { app, BrowserWindow, dialog, ipcMain } = require("electron");
+const { app, BrowserWindow, dialog, ipcMain, shell } = require("electron");
 const path = require("node:path");
 const fs = require("node:fs/promises");
 const { constants } = require("node:fs");
 const { DatabaseSync } = require("node:sqlite");
+
+const EXPIRY_CHECK_INTERVAL = 24 * 60 * 60 * 1000;
 
 app.setPath(
   "userData",
@@ -59,6 +61,7 @@ if (!hasFolderPolicyColumn) {
 }
 console.log("FileWise database connected successfully.");
 
+
 function recordFileHistory(filePath, action) {
   const findFile = db.prepare(`
     SELECT id
@@ -79,6 +82,53 @@ function recordFileHistory(filePath, action) {
 
   saveHistory.run(file.id, action);
 }
+
+
+function getExpiredFiles() {
+  const currentDate = new Date().toISOString();
+
+  const query = db.prepare(`
+    SELECT id, name, path, expiry_at
+    FROM files
+    WHERE status = 'managed'
+    AND expiry_at IS NOT NULL
+    AND expiry_at <= ?
+  `);
+
+  return query.all(currentDate);
+}
+
+
+async function processExpiredFiles() {
+  const expiredFiles = getExpiredFiles();
+
+  for (const file of expiredFiles) {
+    try {
+      // Move the file to the Recycle Bin
+      await shell.trashItem(file.path);
+
+      // Update the file status in SQLite
+      db.prepare(`
+        UPDATE files
+        SET status = 'deleted'
+        WHERE id = ?
+      `).run(file.id);
+
+      // Record the action in history
+      recordFileHistory(file.path, "expired-and-deleted");
+
+      console.log(`Moved to Recycle Bin: ${file.name}`);
+
+    } catch (error) {
+      console.error(
+        `Could not move ${file.name} to Recycle Bin:`,
+        error
+      );
+    }
+  }
+}
+
+
 function saveFileRecord(name, filePath) {
   const saveFile = db.prepare(`
     INSERT INTO files (name, path)
@@ -89,6 +139,7 @@ function saveFileRecord(name, filePath) {
 
   saveFile.run(name, filePath);
 }
+
 
 function updateSavedFileRecord(oldPath, newPath, newName) {
   const updateFile = db.prepare(`
@@ -107,56 +158,54 @@ function updateSavedFileRecord(oldPath, newPath, newName) {
 
 
 function calculateExpiryDate(startDate, duration, customDays = 0) {
-    if (duration === "forever") {
-        return null;
+  if (duration === "forever") {
+    return null;
+  }
+
+  const expiryDate = new Date(startDate);
+
+  switch (duration) {
+    case "custom":
+      expiryDate.setDate(expiryDate.getDate() + customDays);
+      break;
+
+    case "1day":
+      expiryDate.setDate(expiryDate.getDate() + 1);
+      break;
+
+    case "7days":
+      expiryDate.setDate(expiryDate.getDate() + 7);
+      break;
+
+    case "1month":
+    case "6months": {
+      const months = duration === "1month" ? 1 : 6;
+      const originalDay = expiryDate.getDate();
+
+      expiryDate.setDate(1);
+      expiryDate.setMonth(expiryDate.getMonth() + months);
+
+      const lastDay = new Date(
+        expiryDate.getFullYear(),
+        expiryDate.getMonth() + 1,
+        0
+      ).getDate();
+
+      expiryDate.setDate(Math.min(originalDay, lastDay));
+      break;
     }
 
-    const expiryDate = new Date(startDate);
+    default:
+      throw new Error("Invalid retention duration.");
+  }
 
-    switch (duration) {
-        case "custom":
-            expiryDate.setDate(expiryDate.getDate() + customDays);
-            break;
-
-        case "1day":
-            expiryDate.setDate(expiryDate.getDate() + 1);
-            break;
-
-        case "7days":
-            expiryDate.setDate(expiryDate.getDate() + 7);
-            break;
-
-        case "1month":
-        case "6months": {
-            const months = duration === "1month" ? 1 : 6;
-            const originalDay = expiryDate.getDate();
-
-            expiryDate.setDate(1);
-            expiryDate.setMonth(expiryDate.getMonth() + months);
-
-            const lastDay = new Date(
-                expiryDate.getFullYear(),
-                expiryDate.getMonth() + 1,
-                0
-            ).getDate();
-
-            expiryDate.setDate(Math.min(originalDay, lastDay));
-            break;
-        }
-
-        default:
-            throw new Error("Invalid retention duration.");
-    }
-
-    return expiryDate;
+  return expiryDate;
 }
+
 
 // Check whether a file is inside a folder.
 function isInsideFolder(filePath, folderPath) {
-  const relativePath = path.relative(
-    folderPath,
-    filePath
-  );
+  const relativePath = path.relative(folderPath, filePath);
 
   return (
     relativePath === "" ||
@@ -649,7 +698,21 @@ function createWindow() {
   });
 }
 
-app.whenReady().then(() => {
+
+app.whenReady().then(async () => {
+  // Check expired files when the app starts.
+  await processExpiredFiles();
+
+  // Check expired files automatically every 24 hours.
+  setInterval(async () => {
+    try {
+      console.log("Running scheduled expiry check...");
+      await processExpiredFiles();
+    } catch (error) {
+      console.error("Scheduled expiry check failed:", error);
+    }
+  }, EXPIRY_CHECK_INTERVAL);
+
   createWindow();
 
   app.on("activate", () => {
@@ -658,6 +721,7 @@ app.whenReady().then(() => {
     }
   });
 });
+
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
