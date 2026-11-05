@@ -14,11 +14,17 @@ contextBridge.exposeInMainWorld("appInfo", {
   renameFile: (oldPath, newName) =>
     ipcRenderer.invoke("file:rename", oldPath, newName),
   getSavedFiles: () => ipcRenderer.invoke("database:get-files"),
+  deleteFileRecord: (filePath) =>
+    ipcRenderer.invoke("database:delete-file-record", filePath),
+  getExpiringSoon: () =>
+  ipcRenderer.invoke("database:get-expiring-soon"),
+
   //database:get-files is an IPC channel that requests the main process to retrieve the list of saved files from the database.
   moveFile: () => ipcRenderer.invoke("file:move"),
   getHistory: () => ipcRenderer.invoke("database:get-history"),
-  deleteFileRecord: (filePath) =>
-    ipcRenderer.invoke("database:delete-file-record", filePath),
+  getRecentlyDeleted: () =>
+  ipcRenderer.invoke("database:get-recently-deleted"),
+  
   manageFile: (filePath, duration,
   customDays) =>
   ipcRenderer.invoke("file:manage", filePath, duration,

@@ -23,23 +23,25 @@
 
             <p class="menu-heading">WORKSPACE</p>
 
-            <nav>
-                <a href="#" class="nav-link active">
-                    <span class="nav-icon">▦</span> Dashboard
-                </a>
-                <a href="#" class="nav-link">
-                    <span class="nav-icon">▤</span> All Files
-                </a>
-                <a href="#" class="nav-link">
-                    <span class="nav-icon">◷</span> Expiring Soon
-                </a>
-                <a href="#" class="nav-link">
-                    <span class="nav-icon">♻</span> Recently Deleted
-                </a>
-                <a href="#" class="nav-link">
-                    <span class="nav-icon">◴</span> Activity History
-                </a>
-            </nav>
+           <nav>
+    <a href="#" class="nav-link active" data-page="dashboard">
+        <span class="nav-icon">▦</span> Dashboard
+    </a>
+
+    <a href="#" class="nav-link" data-page="all-files">
+        <span class="nav-icon">▤</span> All Files
+    </a>
+
+    <a href="#" class="nav-link" data-page="expiring-soon">
+        <span class="nav-icon">◷</span> Expiring Soon
+    </a>
+
+    <a href="#" class="nav-link" data-page="recently-deleted">
+        <span class="nav-icon">♻</span> Recently Deleted
+    </a>
+
+   
+</nav>
 
             <div class="sidebar-note">
                 <div class="note-icon">💡</div>
@@ -59,7 +61,7 @@
             <header class="topbar">
                 <div>
                     <p class="breadcrumb">WORKSPACE / OVERVIEW</p>
-                    <h1>Dashboard</h1>
+                    <h1 id="currentPageTitle">Dashboard</h1>
                     <p class="page-description">
                         Manage your files and stay ahead of expiration dates.
                     </p>
@@ -161,7 +163,7 @@
 
 
 <!-- Expiring files -->
-<section class="section">
+<section class="section" id="allFilesSection">
     <div class="section-heading">
         <div>
             <h2>Files Needing Attention</h2>
@@ -183,6 +185,58 @@
     </div>
 </section>
 
+
+<!-- Expiring Soon Section -->
+<section class="section" id="expiringSoonSection" hidden>
+
+    <div class="section-heading">
+        <div>
+            <h2>Expiring Soon</h2>
+            <p>Files that will expire within the next 7 days.</p>
+        </div>
+    </div>
+
+    <div class="file-table">
+
+        <div class="table-header">
+            <span>FILE NAME</span>
+            <span>RETENTION</span>
+            <span>EXPIRES</span>
+            <span>STATUS</span>
+        </div>
+
+        <!-- Expiring files will be displayed here -->
+        <div id="expiringSoonList"></div>
+
+    </div>
+
+</section>
+
+
+<!-- Recently Deleted Section -->
+<section class="section" id="recentlyDeletedSection" hidden>
+
+    <div class="section-heading">
+        <div>
+            <h2>Recently Deleted</h2>
+            <p>Files that have been moved to the Recycle Bin.</p>
+        </div>
+    </div>
+
+    <div class="file-table">
+
+        <div class="table-header">
+            <span>FILE NAME</span>
+            <span>ORIGINAL LOCATION</span>
+            <span>DELETED ON</span>
+            <span>STATUS</span>
+        </div>
+
+        <div id="recentlyDeletedList"></div>
+
+    </div>
+
+</section>
 
             <!-- Retention explanation -->
             <section class="section retention-section">

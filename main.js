@@ -490,6 +490,58 @@ ipcMain.handle("database:get-files", () => {
 
   return getFiles.all();
 });
+
+// Get recently deleted files
+ipcMain.handle("database:get-recently-deleted", () => {
+  const getDeletedFiles = db.prepare(`
+    SELECT
+      files.id,
+      files.name,
+      files.path,
+      history.timestamp AS deleted_at
+    FROM files
+    INNER JOIN history
+      ON files.id = history.file_id
+    WHERE files.status = 'deleted'
+      AND history.action = 'expired-and-deleted'
+      AND history.id = (
+        SELECT MAX(h.id)
+        FROM history h
+        WHERE h.file_id = files.id
+          AND h.action = 'expired-and-deleted'
+      )
+    ORDER BY history.timestamp DESC
+  `);
+
+  return getDeletedFiles.all();
+});
+
+ipcMain.handle("database:get-expiring-soon", () => {
+  // Get the current date and time.
+  const currentDate = new Date();
+
+  // Calculate the date and time 7 days from now.
+  const sevenDaysLater = new Date(currentDate);
+  sevenDaysLater.setDate(sevenDaysLater.getDate() + 7);
+
+  // Convert both dates into ISO strings.
+  const startDate = currentDate.toISOString();
+  const endDate = sevenDaysLater.toISOString();
+
+  // Fetch managed files expiring within the next 7 days.
+  const query = db.prepare(`
+    SELECT id, name, path, added_at, expiry_at, status
+    FROM files
+    WHERE status = 'managed'
+    AND expiry_at IS NOT NULL
+    AND expiry_at >= ?
+    AND expiry_at <= ?
+    ORDER BY expiry_at ASC
+  `);
+
+  return query.all(startDate, endDate);
+});
+
 ipcMain.handle("database:get-history", () => {
   const getHistory = db.prepare(`
     SELECT
